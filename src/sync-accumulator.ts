@@ -77,7 +77,9 @@ export interface ITimeline {
 
 export interface IJoinedRoom {
     "summary": IRoomSummary;
-    "state": IState;
+    // One of `state` or `state_after` is required.
+    "state"?: IState;
+    "org.matrix.msc4222.state_after"?: IState; // https://github.com/matrix-org/matrix-spec-proposals/pull/4222
     "timeline": ITimeline;
     "ephemeral": IEphemeral;
     "account_data": IAccountData;
@@ -106,9 +108,11 @@ export interface IInvitedRoom {
 }
 
 export interface ILeftRoom {
-    state: IState;
-    timeline: ITimeline;
-    account_data: IAccountData;
+    // One of `state` or `state_after` is required.
+    "state"?: IState;
+    "org.matrix.msc4222.state_after"?: IState;
+    "timeline": ITimeline;
+    "account_data": IAccountData;
 }
 
 export interface IKnockedRoom {
@@ -564,16 +568,17 @@ export class SyncAccumulator {
         Object.keys(this.joinRooms).forEach((roomId) => {
             const roomData = this.joinRooms[roomId];
             const roomJson: IJoinedRoom = {
-                ephemeral: { events: [] },
-                account_data: { events: [] },
-                state: { events: [] },
-                timeline: {
+                "ephemeral": { events: [] },
+                "account_data": { events: [] },
+                "state": { events: [] },
+                "org.matrix.msc4222.state_after": { events: [] },
+                "timeline": {
                     events: [],
                     prev_batch: null,
                 },
-                unread_notifications: roomData._unreadNotifications,
-                unread_thread_notifications: roomData._unreadThreadNotifications,
-                summary: roomData._summary as IRoomSummary,
+                "unread_notifications": roomData._unreadNotifications,
+                "unread_thread_notifications": roomData._unreadThreadNotifications,
+                "summary": roomData._summary as IRoomSummary,
             };
             // Add account data
             Object.keys(roomData._accountData).forEach((evType) => {
@@ -654,7 +659,10 @@ export class SyncAccumulator {
                         // use the reverse clobbered event instead.
                         ev = rollBackState[evType][stateKey];
                     }
-                    roomJson.state.events.push(ev);
+                    // Push to both fields to provide downgrade compatibility in the sync accumulator db
+                    // the code will prefer `state_after` if it is present
+                    roomJson["org.matrix.msc4222.state_after"]?.events.push(ev);
+                    roomJson.state?.events.push(ev);
                 });
             });
             data.join[roomId] = roomJson;
