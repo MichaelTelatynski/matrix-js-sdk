@@ -4877,6 +4877,10 @@ export class MatrixClient extends TypedEventEmitter<EmittedEvents, ClientEventHa
             // See https://github.com/matrix-org/matrix-doc/pull/1849#pullrequestreview-248763642
             return false;
         }
+        if (event.getType() === "io.element.call.reaction") {
+            // In the short term, disable encrypting these to improve performance.
+            return false;
+        }
 
         if (event.isRedaction()) {
             // Redactions do not support encryption in the spec at this time.
