@@ -660,13 +660,13 @@ export class SyncAccumulator {
             Object.keys(roomData._currentState).forEach((evType) => {
                 Object.keys(roomData._currentState[evType]).forEach((stateKey) => {
                     let ev = roomData._currentState[evType][stateKey];
+                    // Push to both fields to provide downgrade compatibility in the sync accumulator db
+                    // the code will prefer `state_after` if it is present.
+                    roomJson["org.matrix.msc4222.state_after"]?.events.push(ev);
                     if (rollBackState[evType] && rollBackState[evType][stateKey]) {
                         // use the reverse clobbered event instead.
                         ev = rollBackState[evType][stateKey];
                     }
-                    // Push to both fields to provide downgrade compatibility in the sync accumulator db
-                    // the code will prefer `state_after` if it is present
-                    roomJson["org.matrix.msc4222.state_after"]?.events.push(ev);
                     roomJson.state?.events.push(ev);
                 });
             });
